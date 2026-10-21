@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import field_error %}
+{% block title %}{{ 'Edit application' if app else 'Add application' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ 'Edit ' ~ app.title ~ ' at ' ~ app.company if app else 'Add application' }}</h1>
+  <a class="btn btn-ghost" href="{{ '/applications/' ~ app.id if app else '/applications' }}">Cancel</a>
+</div>
+{% if errors %}<div class="flash flash-error" role="alert">Please fix the highlighted fields.</div>{% endif %}
+<form class="card form-grid" method="post" action="{{ '/applications/' ~ app.id ~ '/edit' if app else '/applications' }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Company *<input name="company" value="{{ form.company or '' }}" required maxlength="120" autofocus>{{ field_error(errors, 'company') }}</label>
+  <label>Job title *<input name="title" value="{{ form.title or '' }}" required maxlength="160">{{ field_error(errors, 'title') }}</label>
+  <label>Status
+    <select name="status">{% for s in statuses %}<option {{ 'selected' if form.status == s }}>{{ s }}</option>{% endfor %}</select>
+    {{ field_error(errors, 'status') }}
+  </label>
+  <label>Employment type
+    <select name="employment_type">{% for t in employment_types %}<option {{ 'selected' if form.employment_type == t }}>{{ t }}</option>{% endfor %}</select>
+  </label>
+  <label>Location<input name="location" value="{{ form.location or '' }}" maxlength="120" placeholder="Chennai / Remote / Hybrid">{{ field_error(errors, 'location') }}</label>
+  <label>Source<input name="source" value="{{ form.source or '' }}" maxlength="80" placeholder="Campus portal, LinkedIn, referral…">{{ field_error(errors, 'source') }}</label>
+  <label>Application date<input type="date" name="applied_on" value="{{ form.applied_on or '' }}">
+    <span class="hint">Filled with today automatically once the status moves past Saved.</span>{{ field_error(errors, 'applied_on') }}</label>
+  <label>Deadline<input type="date" name="deadline" value="{{ form.deadline or '' }}">{{ field_error(errors, 'deadline') }}</label>
+  <label class="span-2">Job posting URL<input type="url" name="job_url" value="{{ form.job_url or '' }}" maxlength="2048" placeholder="https://">{{ field_error(errors, 'job_url') }}</label>
+  <fieldset class="span-2 comp">
+    <legend>Compensation (optional)</legend>
+    <label>Min<input inputmode="numeric" name="comp_min" value="{{ form.comp_min or '' }}" placeholder="e.g. 25000">{{ field_error(errors, 'comp_min') }}</label>
+    <label>Max<input inputmode="numeric" name="comp_max" value="{{ form.comp_max or '' }}" placeholder="e.g. 40000">{{ field_error(errors, 'comp_max') }}</label>
+    <label>Currency<select name="comp_currency">{% for c in currencies %}<option {{ 'selected' if form.comp_currency == c }}>{{ c }}</option>{% endfor %}</select></label>
+    <label>Per<select name="comp_period">{% for pd in periods %}<option {{ 'selected' if form.comp_period == pd }}>{{ pd }}</option>{% endfor %}</select></label>
+  </fieldset>
+  <label class="span-2">Job description<textarea name="description" rows="5" maxlength="10000">{{ form.description or '' }}</textarea>{{ field_error(errors, 'description') }}</label>
+  <label class="span-2">Notes<textarea name="notes" rows="3" maxlength="10000" placeholder="Contacts, referral, things to follow up…">{{ form.notes or '' }}</textarea>{{ field_error(errors, 'notes') }}</label>
+  <div class="span-2 actions"><button class="btn btn-primary" type="submit">{{ 'Save changes' if app else 'Add application' }}</button></div>
+</form>
+{% endblock %}

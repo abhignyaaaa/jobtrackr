@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}JobTrackr{% endblock %} · JobTrackr</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css?v=4">
+</head>
+<body class="{% if user %}has-nav{% endif %}">
+{% if user %}
+<header class="topbar">
+  <a class="brand" href="/dashboard"><span class="brand-mark">J</span>JobTrackr</a>
+  <nav class="nav" aria-label="Main">
+    {% set p = request.url.path %}
+    <a href="/dashboard" class="{{ 'active' if p.startswith('/dashboard') }}">Dashboard
+      {% if reminder_count %}<span class="pill" title="Due within 48 hours">{{ reminder_count }}</span>{% endif %}</a>
+    <a href="/applications" class="{{ 'active' if p.startswith('/applications') }}">Applications</a>
+    <a href="/interviews" class="{{ 'active' if p.startswith('/interviews') }}">Interviews</a>
+    {% if storage_enabled %}<a href="/documents" class="{{ 'active' if p.startswith('/documents') }}">Documents</a>{% endif %}
+  </nav>
+  <div class="account">
+    <a href="/settings" class="muted small" title="Settings">{{ user.full_name.split()[0] }} · Settings</a>
+    <form method="post" action="/logout" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-ghost btn-sm" type="submit">Log out</button>
+    </form>
+  </div>
+</header>
+{% endif %}
+<main class="{% if user %}container{% else %}container narrow{% endif %}">
+  {% if flash %}
+  <div class="flash flash-{{ flash.k }}" role="status">{{ flash.m }}</div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer muted small">JobTrackr · times shown in {{ tzname }}</footer>
+<script src="/static/js/app.js?v=4" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

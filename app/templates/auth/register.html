@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import field_error %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<section class="auth card">
+  <a class="brand" href="/"><span class="brand-mark">J</span>JobTrackr</a>
+  <h1>Create your account</h1>
+  <form method="post" action="/register" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Full name
+      <input name="full_name" value="{{ form.full_name or '' }}" autocomplete="name" required maxlength="120">
+    </label>{{ field_error(errors, 'full_name') }}
+    <label>Email
+      <input type="email" name="email" value="{{ form.email or '' }}" autocomplete="email" required maxlength="254">
+    </label>{{ field_error(errors, 'email') }}
+    <label>Password
+      <input type="password" name="password" autocomplete="new-password" required minlength="8" maxlength="128">
+      <span class="hint">At least 8 characters, with a letter and a number.</span>
+    </label>{{ field_error(errors, 'password') }}
+    <label>Confirm password
+      <input type="password" name="confirm_password" autocomplete="new-password" required maxlength="128">
+    </label>{{ field_error(errors, 'confirm_password') }}
+    <button class="btn btn-primary btn-block" type="submit">Create account</button>
+  </form>
+  <p class="muted small">Already registered? <a href="/login">Log in</a></p>
+</section>
+{% endblock %}

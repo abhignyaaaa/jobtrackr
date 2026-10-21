@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Interviews{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Interviews</h1><p class="muted">Add interviews from an application's page.</p></div></div>
+
+{% macro iv_table(rows, empty) %}
+{% if rows %}
+<div class="card table-wrap"><table class="table">
+  <thead><tr><th>When</th><th>Company &amp; role</th><th>Round</th><th class="hide-sm">Type</th><th>Result</th><th></th></tr></thead>
+  <tbody>
+  {% for iv, a in rows %}
+  <tr>
+    <td>{{ localtime(iv.scheduled_at, '%a %d %b %Y, %I:%M %p') }}</td>
+    <td><a href="/applications/{{ a.id }}#interviews"><strong>{{ a.company }}</strong></a><div class="muted small">{{ a.title }}</div></td>
+    <td>{{ iv.round_name }}</td>
+    <td class="hide-sm">{{ iv.interview_type }} · {{ iv.mode }}</td>
+    <td><span class="badge badge-result-{{ iv.result|lower }}">{{ iv.result }}</span></td>
+    <td>{% if iv.meeting_link %}<a class="btn btn-sm" href="{{ iv.meeting_link }}" target="_blank" rel="noopener noreferrer nofollow">Join</a>{% endif %}
+        <a class="btn btn-sm btn-ghost" href="/interviews/{{ iv.id }}/edit">Edit</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<section class="card"><p class="muted">{{ empty }}</p></section>{% endif %}
+{% endmacro %}
+
+<h2>Upcoming</h2>
+{{ iv_table(upcoming, "No upcoming interviews.") }}
+<h2>Past</h2>
+{{ iv_table(past, "No past interviews yet.") }}
+{% endblock %}

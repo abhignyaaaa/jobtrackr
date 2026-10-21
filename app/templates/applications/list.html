@@ -1,0 +1,80 @@
+{% from "partials/macros.html" import status_badge %}
+{% extends "base.html" %}
+{% block title %}Applications{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Applications</h1><p class="muted">{{ total }} match{{ '' if total == 1 else 'es' }}</p></div>
+  <div class="actions">
+    <a class="btn" href="/applications/export.csv{{ '?' ~ export_q if export_q }}">Export CSV</a>
+    <a class="btn btn-primary" href="/applications/new">+ Add application</a>
+  </div>
+</div>
+
+<form class="card filters" method="get" action="/applications" role="search">
+  <label class="grow">Search
+    <input type="search" name="q" value="{{ params.q or '' }}" placeholder="Company, role, location, notes…" maxlength="100">
+  </label>
+  <label>Status
+    <select name="status"><option value="">All</option>
+      {% for s in statuses %}<option {{ 'selected' if params.status == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Type
+    <select name="type"><option value="">All</option>
+      {% for t in employment_types %}<option {{ 'selected' if params.type == t }}>{{ t }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Company
+    <select name="company"><option value="">All</option>
+      {% for c in companies %}<option {{ 'selected' if (params.company or '')|lower == c|lower }}>{{ c }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Applied from<input type="date" name="from" value="{{ params.from or '' }}"></label>
+  <label>to<input type="date" name="to" value="{{ params.to or '' }}"></label>
+  <input type="hidden" name="sort" value="{{ sort }}"><input type="hidden" name="dir" value="{{ direction }}">
+  <div class="filter-actions">
+    <button class="btn btn-primary" type="submit">Apply</button>
+    <a class="btn btn-ghost" href="/applications">Reset</a>
+  </div>
+</form>
+
+{% if rows %}
+<div class="card table-wrap">
+  <table class="table">
+    <thead><tr>
+      {% macro th(key, label) %}<th><a href="{{ sort_url(key) }}" class="sort {{ 'sorted-' ~ direction if sort == key }}">{{ label }}</a></th>{% endmacro %}
+      {{ th('company', 'Company') }}<th>Role</th>{{ th('status', 'Status') }}<th class="hide-sm">Type</th>
+      {{ th('applied', 'Applied') }}{{ th('deadline', 'Deadline') }}{{ th('updated', 'Updated') }}
+    </tr></thead>
+    <tbody>
+    {% for a in rows %}
+      <tr>
+        <td><a href="/applications/{{ a.id }}"><strong>{{ a.company }}</strong></a>{% if a.location %}<div class="muted small">{{ a.location }}</div>{% endif %}</td>
+        <td>{{ a.title }}</td>
+        <td>{{ status_badge(a.status) }}</td>
+        <td class="hide-sm">{{ a.employment_type }}</td>
+        <td>{{ a.applied_on.strftime('%d %b %Y') if a.applied_on else '—' }}</td>
+        <td>{% if a.deadline %}<span class="{{ 'urgent' if a.deadline >= today and (a.deadline - today).days <= 2 and a.status not in ['Offer Received','Rejected','Withdrawn'] }}">{{ a.deadline.strftime('%d %b %Y') }}</span>{% else %}—{% endif %}</td>
+        <td class="muted small">{{ localtime(a.updated_at, '%d %b') }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if pages > 1 %}
+<nav class="pager" aria-label="Pages">
+  {% if page > 1 %}<a class="btn btn-sm" href="{{ page_url(page - 1) }}">← Prev</a>{% endif %}
+  <span class="muted">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn btn-sm" href="{{ page_url(page + 1) }}">Next →</a>{% endif %}
+</nav>
+{% endif %}
+{% else %}
+<section class="card empty">
+  {% if params.q or params.status or params.type or params.company or params['from'] or params.to %}
+  <h2>No applications match these filters</h2><a class="btn" href="/applications">Clear filters</a>
+  {% else %}
+  <h2>No applications yet</h2><a class="btn btn-primary" href="/applications/new">Add your first application</a>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

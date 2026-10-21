@@ -1,0 +1,18 @@
+{% macro status_badge(status) -%}
+<span class="badge badge-{{ status|lower|replace(' ', '-') }}">{{ status }}</span>
+{%- endmacro %}
+
+{% macro field_error(errors, name) -%}
+{% if errors.get(name) %}<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro money(a) -%}
+{%- if a.comp_min is not none or a.comp_max is not none -%}
+{%- set sym = {'INR': '₹', 'USD': '$', 'EUR': '€', 'GBP': '£'}[a.comp_currency] -%}
+{%- if a.comp_min is not none and a.comp_max is not none and a.comp_min != a.comp_max -%}
+{{ sym }}{{ "{:,}".format(a.comp_min) }} – {{ sym }}{{ "{:,}".format(a.comp_max) }}
+{%- else -%}
+{{ sym }}{{ "{:,}".format(a.comp_min if a.comp_min is not none else a.comp_max) }}
+{%- endif %} / {{ a.comp_period }}
+{%- else -%}<span class="muted">—</span>{%- endif -%}
+{%- endmacro %}

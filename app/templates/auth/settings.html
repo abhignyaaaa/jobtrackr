@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import field_error %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Settings</h1></div>
+<div class="grid-2">
+  <section class="card">
+    <h2>Profile</h2>
+    <dl class="kv">
+      <dt>Name</dt><dd>{{ user.full_name }}</dd>
+      <dt>Email</dt><dd>{{ user.email }}</dd>
+    </dl>
+    <form method="post" action="/settings/timezone">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Time zone (used for dates, deadlines and interview times)
+        <select name="timezone">
+          {% for tz in timezones %}<option value="{{ tz }}" {{ 'selected' if tz == current_tz }}>{{ tz }}</option>{% endfor %}
+        </select>
+      </label>
+      <button class="btn" type="submit">Save time zone</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>Change password</h2>
+    <form method="post" action="/settings/password" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>
+      {{ field_error(errors, 'current_password') }}
+      <label>New password<input type="password" name="new_password" autocomplete="new-password" required minlength="8" maxlength="128"></label>
+      {{ field_error(errors, 'new_password') }}
+      <label>Confirm new password<input type="password" name="confirm_password" autocomplete="new-password" required></label>
+      {{ field_error(errors, 'confirm_password') }}
+      <button class="btn btn-primary" type="submit">Change password</button>
+      <p class="hint">Changing your password signs out all other devices.</p>
+    </form>
+  </section>
+</div>
+{% endblock %}

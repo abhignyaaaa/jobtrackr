@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<section class="auth card">
+  <a class="brand" href="/"><span class="brand-mark">J</span>JobTrackr</a>
+  <h1>Log in</h1>
+  {% if error %}<div class="flash flash-error" role="alert">{{ error }}</div>{% endif %}
+  <form method="post" action="/login" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>Email
+      <input type="email" name="email" value="{{ form.email or '' }}" autocomplete="username" required maxlength="254" autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" autocomplete="current-password" required maxlength="128">
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+  </form>
+  <p class="muted small">New here? <a href="/register">Create an account</a></p>
+</section>
+{% endblock %}

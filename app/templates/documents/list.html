@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Documents{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Documents</h1>
+  <p class="muted">Resumes and cover letters, stored privately. Only you can download them.</p></div></div>
+
+<form class="card form-grid" method="post" action="/documents" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>File (PDF, DOC or DOCX, max {{ max_mb }} MB) *<input type="file" name="file" accept=".pdf,.doc,.docx" required></label>
+  <label>Label<input name="label" maxlength="120" placeholder="Resume – AI roles v3"></label>
+  <label class="span-2">Link to application (optional)
+    <select name="application_id"><option value="">— None —</option>
+      {% for id, company, title in apps %}<option value="{{ id }}">{{ company }} · {{ title }}</option>{% endfor %}
+    </select>
+  </label>
+  <div class="span-2"><button class="btn btn-primary" type="submit">Upload</button>
+    <span class="hint">{{ docs|length }} of {{ max_docs }} documents used.</span></div>
+</form>
+
+{% if docs %}
+<div class="card table-wrap"><table class="table">
+  <thead><tr><th>Document</th><th class="hide-sm">Linked to</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+  <tbody>
+  {% for d in docs %}
+  <tr>
+    <td><strong>{{ d.label }}</strong><div class="muted small">{{ d.original_name }}</div></td>
+    <td class="hide-sm">{% if d.application %}<a href="/applications/{{ d.application.id }}">{{ d.application.company }}</a>{% else %}—{% endif %}</td>
+    <td>{{ (d.size_bytes / 1024)|round(1) }} KB</td>
+    <td class="muted small">{{ localtime(d.uploaded_at, '%d %b %Y') }}</td>
+    <td><a class="btn btn-sm" href="/documents/{{ d.id }}/download">Download</a>
+      <form method="post" action="/documents/{{ d.id }}/delete" class="inline" data-confirm="Delete this document permanently?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn btn-sm btn-ghost" type="submit">Delete</button>
+      </form></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<section class="card"><p class="muted">No documents uploaded yet.</p></section>{% endif %}
+{% endblock %}

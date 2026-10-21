@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import money, status_badge %}
+{% block title %}{{ app.title }} at {{ app.company }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="muted small"><a href="/applications">← Applications</a></p>
+    <h1>{{ app.title }} <span class="muted">at</span> {{ app.company }}</h1>
+    <p>{{ status_badge(app.status) }} <span class="muted">· {{ app.employment_type }}{% if app.location %} · {{ app.location }}{% endif %}</span></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="/applications/{{ app.id }}/edit">Edit</a>
+    <form method="post" action="/applications/{{ app.id }}/delete" class="inline" data-confirm="Delete this application, its status history and interviews? This cannot be undone.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn btn-danger" type="submit">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid-2 wide-left">
+  <div>
+    <section class="card">
+      <h2>Details</h2>
+      <dl class="kv">
+        <dt>Applied on</dt><dd>{{ app.applied_on.strftime('%d %b %Y') if app.applied_on else '—' }}</dd>
+        <dt>Deadline</dt><dd>{% if app.deadline %}{{ app.deadline.strftime('%d %b %Y') }}{% if app.deadline >= today and app.status not in ['Offer Received','Rejected','Withdrawn'] %} <span class="muted small">({{ (app.deadline - today).days }} days left)</span>{% endif %}{% else %}—{% endif %}</dd>
+        <dt>Compensation</dt><dd>{{ money(app) }}</dd>
+        <dt>Source</dt><dd>{{ app.source or '—' }}</dd>
+        <dt>Job posting</dt><dd>{% if app.job_url %}<a href="{{ app.job_url }}" target="_blank" rel="noopener noreferrer nofollow">{{ app.job_url|truncate(60) }}</a>{% else %}—{% endif %}</dd>
+      </dl>
+      {% if app.description %}<h3>Job description</h3><div class="prose">{{ app.description }}</div>{% endif %}
+      {% if app.notes %}<h3>Notes</h3><div class="prose">{{ app.notes }}</div>{% endif %}
+    </section>
+
+    <section class="card" id="interviews">
+      <h2>Interviews</h2>
+      {% if app.interviews %}
+      <ul class="iv-list">
+        {% for iv in app.interviews %}
+        <li class="iv {{ 'iv-past' if iv.scheduled_at < now_utc }}">
+          <div class="iv-head">
+            <strong>{{ iv.round_name }}</strong> <span class="muted">· {{ iv.interview_type }} · {{ iv.mode }}</span>
+            <span class="badge badge-result-{{ iv.result|lower }}">{{ iv.result }}</span>
+          </div>
+          <div class="muted small">{{ localtime(iv.scheduled_at, '%a %d %b %Y, %I:%M %p') }}</div>
+          {% if iv.meeting_link %}<div class="small"><a href="{{ iv.meeting_link }}" target="_blank" rel="noopener noreferrer nofollow">Meeting link</a></div>{% endif %}
+          {% if iv.prep_notes %}<div class="prose small">{{ iv.prep_notes }}</div>{% endif %}
+          <div class="iv-actions">
+            <a class="btn btn-sm" href="/interviews/{{ iv.id }}/edit">Edit / record result</a>
+            <form method="post" action="/interviews/{{ iv.id }}/delete" class="inline" data-confirm="Delete this interview?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-sm btn-ghost" type="submit">Delete</button>
+            </form>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="muted">No interviews recorded yet.</p>{% endif %}
+
+      <details class="add-iv" {{ 'open' if not app.interviews }}>
+        <summary>+ Add interview</summary>
+        <form method="post" action="/applications/{{ app.id }}/interviews" class="form-grid" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <label>Date &amp; time ({{ tzname }}) *<input type="datetime-local" name="scheduled_at" required></label>
+          <label>Round *<input name="round_name" maxlength="80" placeholder="Round 1 / Technical 2" required></label>
+          <label>Type<select name="interview_type">{% for t in interview_types %}<option {{ 'selected' if t == 'Technical' }}>{{ t }}</option>{% endfor %}</select></label>
+          <label>Mode<select name="mode">{% for md in interview_modes %}<option>{{ md }}</option>{% endfor %}</select></label>
+          <label class="span-2">Meeting link<input type="url" name="meeting_link" maxlength="2048" placeholder="https://"></label>
+          <label class="span-2">Preparation notes<textarea name="prep_notes" rows="3" maxlength="10000"></textarea></label>
+          <input type="hidden" name="result" value="Pending">
+          <div class="span-2"><button class="btn btn-primary" type="submit">Save interview</button></div>
+        </form>
+      </details>
+    </section>
+  </div>
+
+  <div>
+    <section class="card">
+      <h2>Update status</h2>
+      <form method="post" action="/applications/{{ app.id }}/status">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>New status
+          <select name="status">{% for s in statuses %}<option {{ 'selected' if s == app.status }}>{{ s }}</option>{% endfor %}</select>
+        </label>
+        <label>Note (optional)<input name="note" maxlength="300" placeholder="e.g. Cleared OA, HR call next"></label>
+        <button class="btn btn-primary btn-block" type="submit">Update status</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Status history</h2>
+      <ol class="history">
+        {% for h in app.history %}
+        <li>
+          <div>{% if h.from_status %}{{ status_badge(h.from_status) }} → {% endif %}{{ status_badge(h.to_status) }}</div>
+          <div class="muted small">{{ localtime(h.changed_at) }}{% if h.note %} · {{ h.note }}{% endif %}</div>
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    {% if storage_enabled %}
+    <section class="card">
+      <h2>Documents</h2>
+      {% if app.documents %}
+      <ul class="plain">{% for d in app.documents %}<li><a href="/documents/{{ d.id }}/download">{{ d.label }}</a></li>{% endfor %}</ul>
+      {% else %}<p class="muted small">No documents linked.</p>{% endif %}
+      <a class="btn btn-sm" href="/documents">Upload / manage documents</a>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

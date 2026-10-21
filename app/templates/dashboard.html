@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Hi {{ user.full_name.split()[0] }} — here's where your applications stand today, {{ today.strftime('%d %b %Y') }}.</p>
+  </div>
+  <a class="btn btn-primary" href="/applications/new">+ Add application</a>
+</div>
+
+{% if m.total == 0 %}
+<section class="card empty">
+  <h2>No applications yet</h2>
+  <p class="muted">Add your first application to start tracking statuses, deadlines and interviews. Every number on this page is calculated from what you add.</p>
+  <a class="btn btn-primary" href="/applications/new">Add your first application</a>
+</section>
+{% endif %}
+
+<section class="stats" aria-label="Key numbers">
+  <a class="stat" href="/applications"><span class="stat-label">Total applications</span><span class="stat-value" data-testid="stat-total">{{ m.total }}</span></a>
+  <a class="stat" href="/applications?from={{ today.replace(day=1).isoformat() }}&to={{ today.isoformat() }}"><span class="stat-label">Applied this month</span><span class="stat-value" data-testid="stat-month">{{ m.applied_this_month }}</span></a>
+  <a class="stat" href="/applications?status=Applied"><span class="stat-label">Awaiting response</span><span class="stat-value" data-testid="stat-awaiting">{{ m.awaiting }}</span></a>
+  <a class="stat" href="/interviews"><span class="stat-label">Upcoming interviews</span><span class="stat-value" data-testid="stat-interviews">{{ m.upcoming_interviews }}</span></a>
+  <a class="stat stat-good" href="/applications?status=Offer+Received"><span class="stat-label">Offers received</span><span class="stat-value" data-testid="stat-offers">{{ m.offers }}</span></a>
+  <a class="stat stat-bad" href="/applications?status=Rejected"><span class="stat-label">Rejected</span><span class="stat-value" data-testid="stat-rejected">{{ m.rejected }}</span></a>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Upcoming (next 14 days)</h2>
+    {% if not upcoming_interviews and not deadlines and not overdue %}
+      <p class="muted">Nothing scheduled. Interviews and deadlines you add will appear here.</p>
+    {% endif %}
+    <ul class="timeline">
+      {% for iv, a in upcoming_interviews %}
+      <li class="tl-item tl-interview">
+        <span class="tl-when">{{ localtime(iv.scheduled_at, '%a %d %b, %I:%M %p') }}</span>
+        <a href="/applications/{{ a.id }}#interviews"><strong>{{ iv.round_name }}</strong> · {{ a.company }}</a>
+        <span class="muted small">{{ iv.interview_type }} · {{ iv.mode }}</span>
+      </li>
+      {% endfor %}
+      {% for a in deadlines %}
+      {% set days = (a.deadline - today).days %}
+      <li class="tl-item tl-deadline {{ 'tl-urgent' if days <= 2 }}">
+        <span class="tl-when">Deadline {{ 'today' if days == 0 else ('tomorrow' if days == 1 else 'in ' ~ days ~ ' days') }}</span>
+        <a href="/applications/{{ a.id }}"><strong>{{ a.title }}</strong> · {{ a.company }}</a>
+        <span class="muted small">{{ a.deadline.strftime('%d %b') }} · {{ a.status }}</span>
+      </li>
+      {% endfor %}
+      {% for a in overdue %}
+      <li class="tl-item tl-missed">
+        <span class="tl-when">Deadline passed {{ a.deadline.strftime('%d %b') }}</span>
+        <a href="/applications/{{ a.id }}"><strong>{{ a.title }}</strong> · {{ a.company }}</a>
+        <span class="muted small">Still marked Saved — update or withdraw it</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Conversion</h2>
+    <div class="conv">
+      <div><span class="conv-value" data-testid="interview-rate">{{ '%.1f'|format(m.interview_rate) ~ '%' if m.interview_rate is not none else '—' }}</span>
+        <span class="muted small">reached interview<br>{{ m.reached_interview }} of {{ m.submitted }} submitted</span></div>
+      <div><span class="conv-value" data-testid="offer-rate">{{ '%.1f'|format(m.offer_rate) ~ '%' if m.offer_rate is not none else '—' }}</span>
+        <span class="muted small">received an offer<br>{{ m.reached_offer }} of {{ m.submitted }} submitted</span></div>
+    </div>
+    <details class="defs">
+      <summary>How these are calculated</summary>
+      <ul class="small">
+        <li><b>Submitted</b> (the denominator): applications whose status history includes any status other than Saved.</li>
+        <li><b>Reached interview</b>: submitted applications that were ever marked Interview or have an interview recorded.</li>
+        <li><b>Received an offer</b>: submitted applications that were ever marked Offer Received.</li>
+        <li><b>Awaiting response</b>: current status is Applied. <b>Applied this month</b>: application date in the current calendar month.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Status distribution</h2>
+    <div class="chart-box"><canvas id="statusChart" aria-label="Applications by status" role="img"></canvas></div>
+  </section>
+  <section class="card">
+    <h2>Applications submitted per week</h2>
+    <div class="chart-box"><canvas id="activityChart" aria-label="Applications submitted per week, last 12 weeks" role="img"></canvas></div>
+  </section>
+</div>
+<script type="application/json" id="chart-data">{{ chart_data|tojson_safe|safe }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/chart.umd.min.js" defer></script>
+<script src="/static/js/dashboard.js?v=4" defer></script>
+{% endblock %}

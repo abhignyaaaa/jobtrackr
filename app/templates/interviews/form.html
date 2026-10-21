@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import field_error %}
+{% block title %}Edit interview{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Edit interview · {{ iv.application.company }}</h1>
+  <a class="btn btn-ghost" href="/applications/{{ iv.application_id }}#interviews">Cancel</a>
+</div>
+<form class="card form-grid" method="post" action="/interviews/{{ iv.id }}/edit" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Date &amp; time ({{ tzname }}) *<input type="datetime-local" name="scheduled_at" value="{{ form.scheduled_at }}" required>{{ field_error(errors, 'scheduled_at') }}</label>
+  <label>Round *<input name="round_name" value="{{ form.round_name }}" maxlength="80" required>{{ field_error(errors, 'round_name') }}</label>
+  <label>Type<select name="interview_type">{% for t in interview_types %}<option {{ 'selected' if form.interview_type == t }}>{{ t }}</option>{% endfor %}</select></label>
+  <label>Mode<select name="mode">{% for md in interview_modes %}<option {{ 'selected' if form.mode == md }}>{{ md }}</option>{% endfor %}</select></label>
+  <label>Result<select name="result">{% for r in interview_results %}<option {{ 'selected' if form.result == r }}>{{ r }}</option>{% endfor %}</select></label>
+  <label>Meeting link<input type="url" name="meeting_link" value="{{ form.meeting_link }}" maxlength="2048">{{ field_error(errors, 'meeting_link') }}</label>
+  <label class="span-2">Preparation notes<textarea name="prep_notes" rows="5" maxlength="10000">{{ form.prep_notes }}</textarea></label>
+  <div class="span-2"><button class="btn btn-primary" type="submit">Save interview</button></div>
+</form>
+{% endblock %}
