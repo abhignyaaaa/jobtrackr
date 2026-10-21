@@ -114,7 +114,7 @@ and object storage GB + requests. The app is lightweight (2 workers fit in 512 M
 
 ## 7. Testing
 
-`pytest` runs **28 tests against a real PostgreSQL database**, including:
+`pytest` runs **27 tests against a real PostgreSQL database**, including:
 auth flows, hashing, session revocation, rate limiting, CSRF (missing, forged,
 cross-origin), open-redirect blocking, security headers, cross-user isolation
 (read/edit/delete/status/interview/document/CSV), XSS escaping, validation, search with
