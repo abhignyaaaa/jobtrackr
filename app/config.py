@@ -6,7 +6,6 @@ platform's environment (Render dashboard / render.yaml).
 from __future__ import annotations
 
 import os
-import secrets
 from dataclasses import dataclass, field
 
 
@@ -35,9 +34,10 @@ class Settings:
             os.getenv("DATABASE_URL", "postgresql://jt:jt_local_pw@localhost:5432/jobtracker")
         )
     )
-    # Used to sign nothing user-controlled today, but kept for future signed
-    # tokens. In production it MUST be provided; dev gets a random one.
-    secret_key: str = field(default_factory=lambda: os.getenv("SECRET_KEY") or secrets.token_urlsafe(48))
+    # Signs flash-message cookies. If not provided via the environment, the app
+    # generates a random key once and stores it in the database (app/appsecret.py),
+    # so every worker and every restart shares it and no human handles it.
+    secret_key: str | None = field(default_factory=lambda: os.getenv("SECRET_KEY") or None)
     session_days: int = field(default_factory=lambda: int(os.getenv("SESSION_DAYS", "7")))
     session_idle_hours: int = field(default_factory=lambda: int(os.getenv("SESSION_IDLE_HOURS", "48")))
     # Cookies are Secure-only unless explicitly running local HTTP dev.
@@ -61,6 +61,3 @@ class Settings:
 
 
 settings = Settings()
-
-if settings.is_production and not os.getenv("SECRET_KEY"):
-    raise RuntimeError("SECRET_KEY must be set in production")

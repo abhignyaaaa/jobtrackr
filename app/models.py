@@ -31,6 +31,15 @@ def _utcnow() -> dt.datetime:
     return dt.datetime.now(dt.timezone.utc)
 
 
+class AppSecret(Base):
+    """Server-generated application secrets (e.g. the cookie-signing key)."""
+
+    __tablename__ = "app_secrets"
+
+    name: Mapped[str] = mapped_column(String(64), primary_key=True)
+    value: Mapped[str] = mapped_column(String(255))
+
+
 class User(Base):
     __tablename__ = "users"
 

@@ -20,7 +20,15 @@ from . import security
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-_flash_signer = URLSafeSerializer(settings.secret_key, salt="flash")
+_signer: URLSafeSerializer | None = None
+
+
+def _flash_signer() -> URLSafeSerializer:
+    global _signer
+    if _signer is None:
+        from .appsecret import get_secret_key
+        _signer = URLSafeSerializer(get_secret_key(), salt="flash")
+    return _signer
 FLASH_COOKIE = "jt_flash"
 
 
@@ -67,7 +75,7 @@ def csrf_for(request: Request) -> str:
 
 def flash(response, message: str, kind: str = "success"):
     response.set_cookie(
-        FLASH_COOKIE, _flash_signer.dumps({"m": message[:300], "k": kind}),
+        FLASH_COOKIE, _flash_signer().dumps({"m": message[:300], "k": kind}),
         max_age=60, httponly=True, samesite="lax", secure=settings.cookie_secure, path="/",
     )
     return response
@@ -78,7 +86,7 @@ def pop_flash(request: Request) -> dict | None:
     if not raw:
         return None
     try:
-        data = _flash_signer.loads(raw)
+        data = _flash_signer().loads(raw)
     except BadSignature:
         return None
     request.state.clear_flash = True

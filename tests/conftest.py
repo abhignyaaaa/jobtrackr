@@ -9,7 +9,7 @@ os.environ["APP_ENV"] = "test"
 os.environ["COOKIE_SECURE"] = "false"
 os.environ["STORAGE_BACKEND"] = "local"
 os.environ["LOCAL_STORAGE_DIR"] = tempfile.mkdtemp(prefix="jt-test-uploads-")
-os.environ["SECRET_KEY"] = "test-secret"
+os.environ.pop("SECRET_KEY", None)  # exercise the DB-stored signing key
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
